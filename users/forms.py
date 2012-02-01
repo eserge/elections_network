@@ -6,8 +6,8 @@ from models import Profile
 
 class EditProfileForm(ModelForm):
     phone = forms.CharField(required=False, 
-                            help_text=u"Рекомендуемый формат: +74951234567",
-                            error_messages={'max_length': u'В этом поле должно быть не более %(limit_value) символов.'}) 
+                            help_text=u"Рекомендуемый формат: +74951234567")
+
     def __init__(self, *args, **kwargs):
         networks_profile = kwargs.get('instance').user.usermap_set.all()
         if not networks_profile:
