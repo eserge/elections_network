@@ -80,6 +80,7 @@ INSTALLED_APPS = (
 
     'loginza',
     'tinymce',
+    'utils',
 
     'locations',
     'maintenance',

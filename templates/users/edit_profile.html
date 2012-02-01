@@ -1,0 +1,34 @@
+{% extends "users/profile.html" %}
+{% load utiltags %}
+
+{% block content %}
+<h2>Редактирование профиля</h2>
+{# <pre>{{user|rawdump}}</pre> #}
+{# <pre>{{profile|rawdump}}</pre> #}
+<form method="post" action="">{% csrf_token %}
+	{{ form.non_field_errors }}
+	<table>
+	{% for field in form %}
+		{% if not field.is_hidden %}
+		<tr>
+			<th>{{ field.label_tag }}{% if field.field.required %}*{% endif %}</th>
+			<td>{% if field.errors %}<span class="errors">{{ field.errors }}</span>{% endif %}
+				{{ field }}
+				{% if field.help_text %}<br><span class="help_text">{{ field.help_text }}</span>{% endif %}
+			</td>
+		</tr>
+		{% else %}
+		<tr style="display:none;"><td colspan="2">{{ field.label_tag }}{{ field }}</td></tr>
+		{% endif %}
+	{% endfor %}
+	</table>
+	<button type="submit">Сохранить</button>
+</form>
+{{form.media}}
+<script type="text/javascript">
+	tinyMCE.init({
+	        mode: "textareas",
+	        theme: "simple"
+	});
+</script>
+{% endblock %}

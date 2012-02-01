@@ -19,6 +19,13 @@ def current_profile(request):
         return HttpResponseRedirect(reverse('login'))
     return profile(request, request.user.username)
 
+def fill_columns(user):
+    return {
+        'links': list(Link.objects.filter(user=user).select_related()),
+        'contacts': list(Contact.objects.filter(user=user)) if user.is_authenticated() else [],
+        'have_in_contacts': list(Contact.objects.filter(contact=user)),
+        }
+
 def profile(request, username):
     user = get_object_or_404(User, username=username)
 
@@ -31,10 +38,8 @@ def profile(request, username):
         'profile': user.get_profile(),
         'activities': activities,
         'locations': list(Location.objects.filter(parent_1=None).order_by('name')),
-        'links': list(Link.objects.filter(user=user).select_related()),
-        'contacts': list(Contact.objects.filter(user=user)) if user.is_authenticated() else [],
-        'have_in_contacts': list(Contact.objects.filter(contact=user)),
     }
+    context.update(fill_columns(user))
     return render_to_response('users/profile.html', context_instance=RequestContext(request, context))
 
 def become_voter(request):
@@ -110,3 +115,25 @@ def send_message(request):
         return HttpResponse('ok')
 
     return HttpResponse(u'Ошибка')
+
+#TODO: show profile from social networks
+def edit_profile(request):
+    from forms import EditProfileForm
+    if not request.user.is_authenticated():
+        return HttpResponseRedirect(reverse('login'))
+    user = get_object_or_404(User, username=request.user.username)
+    profile = user.get_profile()
+    if request.method == "POST":
+        form = EditProfileForm(request.POST, instance=profile)
+        form.save()
+        return redirect(reverse("edit_profile"))
+        #TODO: show message when form succesfully saved
+    elif request.method == "GET":
+        form = EditProfileForm(instance=profile)
+    context = {
+        'user': user,
+        'profile': profile,
+        'form':form,
+    }
+    context.update(fill_columns(user))
+    return render_to_response('users/edit_profile.html', context_instance=RequestContext(request, context))

@@ -1,0 +1,15 @@
+
+syntax: regexp
+^site_settings\.py$
+^database\.sqlite$
+^users/migrations/*$
+^\.settings/*$
+.*\.pyc$
+.*\.pyo$
+.*\.orig$
+
+syntax glob
+.project
+.pydevproject
+.settings
+site_settings.py
