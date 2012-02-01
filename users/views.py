@@ -125,8 +125,9 @@ def edit_profile(request):
     profile = user.get_profile()
     if request.method == "POST":
         form = EditProfileForm(request.POST, instance=profile)
-        form.save()
-        return redirect(reverse("edit_profile"))
+        if form.is_valid():
+            form.save()
+            return redirect(reverse("edit_profile"))
         #TODO: show message when form succesfully saved
     elif request.method == "GET":
         form = EditProfileForm(instance=profile)
