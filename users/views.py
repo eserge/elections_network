@@ -116,25 +116,30 @@ def send_message(request):
 
     return HttpResponse(u'Ошибка')
 
-#TODO: show profile from social networks
 def edit_profile(request):
     from forms import EditProfileForm
     if not request.user.is_authenticated():
         return HttpResponseRedirect(reverse('login'))
     user = get_object_or_404(User, username=request.user.username)
     profile = user.get_profile()
+    context = {
+        'user': user,
+        'profile': profile,
+    }
     if request.method == "POST":
         form = EditProfileForm(request.POST, instance=profile)
         if form.is_valid():
             form.save()
+            request.session['profile_saved'] = 'saved'
             return redirect(reverse("edit_profile"))
-        #TODO: show message when form succesfully saved
     elif request.method == "GET":
         form = EditProfileForm(instance=profile)
-    context = {
-        'user': user,
-        'profile': profile,
-        'form':form,
-    }
+        context.update({'profile_saved':request.session.get('profile_saved', None)})
+        try:
+            del request.session['profile_saved']
+        except KeyError:
+            pass
+    
+    context.update({'form':form,})
     context.update(fill_columns(user))
     return render_to_response('users/edit_profile.html', context_instance=RequestContext(request, context))

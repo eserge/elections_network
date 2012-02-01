@@ -3,6 +3,7 @@
 
 {% block content %}
 <h2>Редактирование профиля</h2>
+{% if profile_saved %}<p>Изменения в профиле сохранены</p>{% endif %}
 {# <pre>{{user|rawdump}}</pre> #}
 {# <pre>{{profile|rawdump}}</pre> #}
 <form method="post" action="">{% csrf_token %}
