@@ -13,4 +13,5 @@ urlpatterns = patterns('navigation.views',
 urlpatterns += patterns('',
     url(r'^get_sub_regions$', 'locations.views.get_sub_regions', name='get_sub_regions'),
     url(r'^goto_location$', 'locations.views.goto_location', name='goto_location'),
+    url(r'^search_locations_by_name/$', 'locations.views.search_locations_by_name', name='search_location'),
 )

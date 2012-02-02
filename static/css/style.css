@@ -155,3 +155,11 @@ select {
     text-align: center;
     margin: 0;
 }
+
+/* TIK selectors */
+#tik_selector {width:100%;} 
+#tik_results_block {border: 1px solid gray; width: 100%; display: none;}
+	 div.tik_item {margin: 5px 2px; background-color: #fff; text-overflow: ellipsis;}
+		div.tik_item a {color: #000; cursor: default; display: block; padding: 2px;}
+		div.tik_item a:hover {background-color: #332fba; color: #fff;}
+			div.tik_item ins {background-color: #332fba; color: #fff; text-decoration: none;}

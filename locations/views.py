@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 
 from django.core.urlresolvers import reverse
@@ -10,17 +11,16 @@ from locations.models import Location
 from links.models import Link
 from users.models import Participation
 
+from django.core import serializers
+json_serializer = serializers.get_serializer("json")()
+
 # TODO: restructure it and take only one parameter
 def goto_location(request):
-    for name in ('region_3', 'region_2', 'region_1'):
-        try:
-            location_id = int(request.GET.get(name, ''))
-        except ValueError:
-            continue
-
-        return HttpResponseRedirect(reverse('location', args=[location_id]))
-
-    return HttpResponseRedirect(reverse('main'))
+    try:
+        location_id = int(request.GET.get('tik_pk', ''))
+    except ValueError:
+        return HttpResponseRedirect(reverse('main'))
+    return HttpResponseRedirect(reverse('location', args=[location_id]))
 
 # TODO: mark links previously reported by user
 def location(request, loc_id):
@@ -87,4 +87,25 @@ def get_sub_regions(request):
                 res.append({'name': loc.name, 'id': loc.id})
             return HttpResponse(json.dumps(res))
 
+    return HttpResponse('[]')
+
+def search_locations_by_name(request):
+    if request.is_ajax():
+        search_string = request.REQUEST.get("search_string")
+        locations = Location.objects.filter(name__icontains=search_string)
+        # first select third level 
+        # 
+        # next select second level
+        # if there are some select their children (see F)
+        # selecting children exclude these from first query
+        #
+        # then first level locations  and make the same as with second
+        # exclude from result all occurences of already selected first and second level locations 
+        # 
+        for location in locations:
+            location.name = (location.parent_1 and (location.parent_1.name + ", ") or "") + \
+                        (location.parent_2 and (location.parent_2.name + ", ") or "") + \
+                        unicode(location.name)
+        locations_list = json_serializer.serialize(locations, ensure_ascii=False)
+        return HttpResponse(json.dumps(locations_list.encode("utf8")))
     return HttpResponse('[]')

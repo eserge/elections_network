@@ -1,4 +1,5 @@
 {# Put this block a div element and call set_select_location(div_id, path) #}
+{% comment %}
 <select name="region_1">
     <option value="">Выбрать субъект РФ</option>
     {% for location in locations %}
@@ -13,3 +14,78 @@
 <select name="region_3">
     <option value="">Выбрать ТИК</option>
 </select>
+<br>
+{% endcomment %}
+<input type="hidden" name="tik_pk" id="tik_pk" /><input type="hidden" value="" id="tik_selector_stash"/>
+<input type="text" value="" id="tik_selector" autocomplete="off"/>
+<div id="tik_results_block"></div>
+<script type="text/javascript">
+	$(function(){
+		function hightlight(highlight_string, part){
+			workstring = highlight_string;
+			var indices = [];
+			var cut = all_cut = 0;
+			while (workstring.indexOf(part) != -1) {
+				index = workstring.indexOf(part);
+				indices.push(index+all_cut);
+				cut = index + part.length;
+				workstring = workstring.substr(cut);
+				all_cut = all_cut + cut;
+			}
+			var opentag = "<ins>";
+			var closetag = "</ins>";
+			for (var i in indices) {
+				var offset = (opentag+closetag).length*i;
+	 			highlight_string = highlight_string.substring(0, indices[i]+offset) + 
+	 							opentag +
+	 							highlight_string.substring(indices[i]+offset, indices[i]+part.length+offset) +
+	 							closetag +
+	 							highlight_string.substring(indices[i]+part.length+offset);
+			}
+			return highlight_string;
+		}
+		$("#tik_selector").focus(function(ev){
+			if ($("#tik_results_block").find("div.tik_item").length > 0) {
+				$("#tik_results_block").css("display","block");
+			}
+			var stash = $("#tik_selector_stash").val();
+			if (stash.length > 0) {
+				$(this).val(stash);
+			}
+		});
+		//$("#tik_selector").blur();
+		$("#tik_selector").bind("keyup", function(ev) {
+			var search_term = this.value;
+			if (this.value.length >= 3) {
+				$.getJSON('/search_locations_by_name/', {'search_string':this.value}, function(data){
+					var data = $.parseJSON(data)
+					var info_div = $("#tik_results_block");
+					info_div.css("display", "block");
+					info_div.find("div").remove();
+					for (var i = 0; i < data.length; i++) {
+						var item = data[i] 
+						var tik_name = hightlight(item.fields.name, search_term);
+						var tik_div = $('<div id="'+item.pk+'_tik">').addClass("tik_item");
+						var link = $("<a>").click(function(ev){
+							var id = $(this).parent().attr("id");
+							$("#tik_pk").val(parseInt(id));
+							$("#tik_selector_stash").val($("#tik_selector").val());
+							$("#tik_selector").val($(this).text());
+							$("#tik_results_block").css("display","none");
+							return false;
+						})
+						link.append(tik_name);
+						info_div.append(tik_div.append(link));
+						/*
+						 * item.pk
+						 * item.fields.name
+						 * item.fields.parent1
+						 * item.fields.parent2
+						 * 
+						 */
+					}
+				});
+			}
+		});
+	});
+</script>
