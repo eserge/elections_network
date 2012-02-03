@@ -19,8 +19,15 @@ def goto_location(request):
     try:
         location_id = int(request.GET.get('tik_pk', ''))
     except ValueError:
+        for name in ('region_3', 'region_2', 'region_1'):
+            try:
+                location_id = int(request.GET.get(name, ''))
+            except ValueError:
+                continue
+            return HttpResponseRedirect(reverse('location', args=[location_id]))
         return HttpResponseRedirect(reverse('main'))
-    return HttpResponseRedirect(reverse('location', args=[location_id]))
+    else:
+        return HttpResponseRedirect(reverse('location', args=[location_id]))
 
 # TODO: mark links previously reported by user
 def location(request, loc_id):
@@ -92,20 +99,42 @@ def get_sub_regions(request):
 def search_locations_by_name(request):
     if request.is_ajax():
         search_string = request.REQUEST.get("search_string")
-        locations = Location.objects.filter(name__icontains=search_string)
+        third_level = Location.objects.filter(name__icontains=search_string, 
+                                              parent_1__isnull=False, 
+                                              parent_2__isnull=False).select_related('parent_1__name', 'parent_2__name').order_by('name')
+        second_level = Location.objects.filter(name__icontains=search_string, 
+                                               parent_1__isnull=False, 
+                                               parent_2__isnull=True).select_related('parent_1__name', 'parent_2__name').order_by('name')
+        first_level = Location.objects.filter(name__icontains=search_string, 
+                                              parent_1__isnull=True, 
+                                              parent_2__isnull=True).order_by('name')
+        children = Location.objects.filter(Q(parent_2__in=[o.id for o in second_level]) |  
+                                           Q(parent_1__in=[o.id for o in first_level])).exclude(
+                                                 Q(id__in=[o.id for o in third_level]) | 
+                                                 Q(id__in=[o.id for o in second_level])).select_related(
+                                                        'parent_1__name', 
+                                                        'parent_2__name').order_by('name')
+        locations = []
+        locations.extend(third_level)
+        locations.extend(children)
+        locations.extend(second_level)
+        locations.extend(first_level)
         # first select third level 
         # 
         # next select second level
-        # if there are some select their children (see F)
+        # if there are some - select their children
         # selecting children exclude these from first query
         #
-        # then first level locations  and make the same as with second
+        # then select first level locations  and do the same as with second
         # exclude from result all occurences of already selected first and second level locations 
         # 
+        result_loc = []
         for location in locations:
-            location.name = (location.parent_1 and (location.parent_1.name + ", ") or "") + \
-                        (location.parent_2 and (location.parent_2.name + ", ") or "") + \
-                        unicode(location.name)
-        locations_list = json_serializer.serialize(locations, ensure_ascii=False)
-        return HttpResponse(json.dumps(locations_list.encode("utf8")))
+            result_loc.append({'name' : (location.parent_1 and (location.parent_1.name + ", ") or "") + \
+                                        (location.parent_2 and (location.parent_2.name + ", ") or "") + \
+                                        unicode(location.name),
+                               'pk' : location.pk})
+        #locations_list = json_serializer.serialize(locations, ensure_ascii=False)
+        return HttpResponse(json.dumps(result_loc))
+#        return HttpResponse('[]')
     return HttpResponse('[]')
