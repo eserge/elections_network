@@ -21,6 +21,8 @@
 <div id="tik_results_block"></div>
 <script type="text/javascript">
 	$(function(){
+		var wait_flag = 0;
+		var timer = null;
 		function hightlight(highlight_string, part){
 			workstring = highlight_string;
 			var indices = [];
@@ -53,35 +55,53 @@
 				$(this).val(stash);
 			}
 		});
-		$("#tik_selector").bind("keyup", function(ev) {
-			var search_term = this.value;
-			if (this.value.length >= 3) {
-				$.getJSON('/search_locations_by_name/', {'search_string':this.value}, function(data){
-					var info_div = $("#tik_results_block");
-					info_div.css("display", "block");
-					info_div.find("div").remove();
-					for (var i = 0; i < data.length; i++) {
-						var item = data[i] 
-						var tik_name = hightlight(item.name, search_term);
-						var tik_div = $('<div id="'+item.pk+'_tik">').addClass("tik_item");
-						var link = $("<a>").click(function(ev){
-							var id = $(this).parent().attr("id");
-							$("#tik_pk").val(parseInt(id));
-							$("#tik_selector_stash").val($("#tik_selector").val());
-							$("#tik_selector").val($(this).text());
-							$("#tik_results_block").css("display","none");
-							return false;
-						})
-						link.append(tik_name);
-						info_div.append(tik_div.append(link));
-						/*
-						 * item.pk
-						 * item.name
-						 * 
-						 */
-					}
-				});
+		function bindEvent(element, type, handler) {
+			if(element.addEventListener) {
+		    	element.addEventListener(type, handler, false);
+			} else {
+		    	element.attachEvent('on'+type, handler);
 			}
+		}
+		bindEvent(document.getElementById("tik_selector"), "keyup", function(ev) {
+			var input = this;
+			if (wait_flag) {
+				return false;
+			} else {
+				wait_flag = 1;
+			}
+			timer = setTimeout(function(ev) {
+				wait_flag = 0;
+				clearTimeout(timer);
+				var search_term = input.value;
+				if (input.value.length >= 3) {
+					$.getJSON('/search_locations_by_name/', {'search_string':input.value}, function(data){
+						var info_div = $("#tik_results_block");
+						if (data.length > 0) {
+							info_div.css("display", "block"); }
+						info_div.find("div").remove();
+						for (var i = 0; i < data.length; i++) {
+							var item = data[i] 
+							var tik_name = hightlight(item.name, search_term);
+							var tik_div = $('<div id="'+item.pk+'_tik">').addClass("tik_item");
+							var link = $("<a>").click(function(ev){
+								var id = $(this).parent().attr("id");
+								$("#tik_pk").val(parseInt(id));
+								$("#tik_selector_stash").val($("#tik_selector").val());
+								$("#tik_selector").val($(this).text());
+								$("#tik_results_block").css("display","none");
+								return false;
+							})
+							link.append(tik_name);
+							info_div.append(tik_div.append(link));
+							/*
+							 * item.pk
+							 * item.name
+							 * 
+							 */
+						}
+					});
+				}
+			} , 400);
 		});
 	});
 </script>
